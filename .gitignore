@@ -1,0 +1,29 @@
+# Compiled files
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+.settings/
+.project
+.classpath
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# System files
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Application specific (локальные настройки)
+application-local.yml
+application-dev.yml
+*.secret
