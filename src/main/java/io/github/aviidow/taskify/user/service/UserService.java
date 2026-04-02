@@ -4,11 +4,11 @@ import io.github.aviidow.taskify.user.dto.UserRegistrationDto;
 import io.github.aviidow.taskify.user.dto.UserResponseDto;
 import io.github.aviidow.taskify.user.model.User;
 import io.github.aviidow.taskify.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

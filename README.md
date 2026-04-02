@@ -1,6 +1,6 @@
-# TaskFlow
+# Taskify
 
-TaskFlow — система управления задачами с JWT-авторизацией.
+Taskify — система управления задачами с JWT-авторизацией.
 
 ![Java](https://img.shields.io/badge/Java-17-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-green)
