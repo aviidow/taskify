@@ -31,8 +31,6 @@ public class CommentService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
-        checkTaskAccess(task, author);
-
         Comment comment = commentMapper.toEntity(dto, author, task);
         Comment savedComment = commentRepository.save(comment);
 
@@ -47,8 +45,6 @@ public class CommentService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
-        checkTaskAccess(task, currentUser);
-
         return commentRepository.findByTaskIdOrderByCreatedAtDesc(taskId, pageable)
                 .map(comment -> commentMapper.toResponseDto(comment, currentUser.getId(), isAdmin(currentUser)));
     }
@@ -58,8 +54,6 @@ public class CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
 
-        checkTaskAccess(comment.getTask(), currentUser);
-
         return commentMapper.toResponseDto(comment, currentUser.getId(), isAdmin(currentUser));
     }
 
@@ -67,10 +61,6 @@ public class CommentService {
     public CommentResponseDto updateComment(Long id, CommentRequestDto dto, User currentUser) {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
-
-        if (!comment.getAuthor().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You don't have permission to edit this comment");
-        }
 
         commentMapper.updateEntity(comment, dto);
         Comment updatedComment = commentRepository.save(comment);
@@ -84,22 +74,8 @@ public class CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
 
-        if (!comment.getAuthor().getId().equals(currentUser.getId()) && !isAdmin(currentUser)) {
-            throw new RuntimeException("You don't have permission to delete this comment");
-        }
-
         commentRepository.delete(comment);
         log.info("Comment deleted successfully with id: {}", id);
-    }
-
-    private void checkTaskAccess(Task task, User user) {
-        boolean hasAccess = task.getCreator().getId().equals(user.getId()) ||
-                (task.getAssignee() != null && task.getAssignee().getId().equals(user.getId())) ||
-                isAdmin(user);
-
-        if (!hasAccess) {
-            throw new RuntimeException("You don't have permission to access comments for this task");
-        }
     }
 
     private boolean isAdmin(User user) {

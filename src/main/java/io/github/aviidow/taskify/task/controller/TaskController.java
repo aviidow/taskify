@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -48,44 +49,36 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskResponseDto> getTaskById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        User currentUser = userService.findByEmail(userDetails.getUsername());
-        TaskResponseDto task = taskService.getTaskById(id, currentUser);
+    @PreAuthorize("@taskSecurity.canViewTask(#id)")
+    public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable Long id) {
+        TaskResponseDto task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@taskSecurity.canEditTask(#id)")
     public ResponseEntity<TaskResponseDto> updateTask(
             @PathVariable Long id,
-            @Valid @RequestBody TaskRequestDto dto,
-            @AuthenticationPrincipal UserDetails userDetails
+            @Valid @RequestBody TaskRequestDto dto
     ) {
-        User currentUser = userService.findByEmail(userDetails.getUsername());
-        TaskResponseDto updatedTask = taskService.updateTask(id, dto, currentUser);
+        TaskResponseDto updatedTask = taskService.updateTask(id, dto);
         return ResponseEntity.ok(updatedTask);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        User currentUser = userService.findByEmail(userDetails.getUsername());
-        taskService.deleteTask(id, currentUser);
+    @PreAuthorize("@taskSecurity.canDeleteTask(#id)")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+        taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/assign/{assigneeId}")
+    @PreAuthorize("@taskSecurity.canAssignTask(#id)")
     public ResponseEntity<TaskResponseDto> assignTask(
             @PathVariable Long id,
-            @PathVariable Long assigneeId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @PathVariable Long assigneeId
     ) {
-        User currentUser = userService.findByEmail(userDetails.getUsername());
-        TaskResponseDto updatedTask = taskService.assignTask(id, assigneeId, currentUser);
+        TaskResponseDto updatedTask = taskService.assignTask(id, assigneeId);
         return ResponseEntity.ok(updatedTask);
     }
 }

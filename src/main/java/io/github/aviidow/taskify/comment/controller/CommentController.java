@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,7 @@ public class CommentController {
     private final UserService userService;
 
     @PostMapping("/tasks/{taskId}/comments")
+    @PreAuthorize("@commentSecurity.canCreateComment(#taskId)")
     public ResponseEntity<CommentResponseDto> createComment(
             @PathVariable Long taskId,
             @Valid @RequestBody CommentRequestDto dto,
@@ -39,6 +41,7 @@ public class CommentController {
     }
 
     @GetMapping("/tasks/{taskId}/comments")
+    @PreAuthorize("@commentSecurity.canViewComments(#taskId)")
     public ResponseEntity<Page<CommentResponseDto>> getCommentsByTask(
             @PathVariable Long taskId,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -50,6 +53,7 @@ public class CommentController {
     }
 
     @GetMapping("/comments/{id}")
+    @PreAuthorize("@commentSecurity.canEditComment(#id) or @commentSecurity.canDeleteComment(#id)")
     public ResponseEntity<CommentResponseDto> getCommentById(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
@@ -60,6 +64,7 @@ public class CommentController {
     }
 
     @PutMapping("/comments/{id}")
+    @PreAuthorize("@commentSecurity.canEditComment(#id)")
     public ResponseEntity<CommentResponseDto> updateComment(
             @PathVariable Long id,
             @Valid @RequestBody CommentRequestDto dto,
@@ -71,6 +76,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/comments/{id}")
+    @PreAuthorize("@commentSecurity.canDeleteComment(#id)")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails

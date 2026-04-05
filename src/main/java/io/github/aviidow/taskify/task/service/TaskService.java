@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,34 +49,20 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public TaskResponseDto getTaskById(Long id, User currentUser) {
+    public TaskResponseDto getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
-
-        if (!task.getCreator().getId().equals(currentUser.getId()) &&
-                (task.getAssignee() == null || !task.getAssignee().getId().equals(currentUser.getId())) &&
-                !currentUser.getRole().equals(User.Role.ADMIN)) {
-            throw new RuntimeException("You don't have permission to view this task");
-        }
-
         return taskMapper.toResponseDto(task);
     }
 
     @Transactional
-    public TaskResponseDto updateTask(Long id, TaskRequestDto dto, User currentUser) {
+    public TaskResponseDto updateTask(Long id, TaskRequestDto dto) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
-        if (!task.getCreator().getId().equals(currentUser.getId()) &&
-                !currentUser.getRole().equals(User.Role.ADMIN)) {
-            throw new RuntimeException("You don't have permission to update this task");
-        }
-
-        User assignee = null;
-        if (dto.getAssigneeId() != null) {
-            assignee = userRepository.findById(dto.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found with id: " + dto.getAssigneeId()));
-        }
+        User assignee = dto.getAssigneeId() != null
+                ? userRepository.findById(dto.getAssigneeId()).orElse(null)
+                : null;
 
         taskMapper.updateEntity(task, dto, assignee);
         Task updatedTask = taskRepository.save(task);
@@ -85,28 +72,17 @@ public class TaskService {
     }
 
     @Transactional
-    public void deleteTask(Long id, User currentUser) {
+    public void deleteTask(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
-
-        if (!task.getCreator().getId().equals(currentUser.getId()) &&
-                !currentUser.getRole().equals(User.Role.ADMIN)) {
-            throw new RuntimeException("You don't have permission to delete this task");
-        }
-
         taskRepository.delete(task);
         log.info("Task deleted successfully with id: {}", id);
     }
 
     @Transactional
-    public TaskResponseDto assignTask(Long id, Long assigneeId, User currentUser) {
+    public TaskResponseDto assignTask(Long id, Long assigneeId) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
-
-        if (!task.getCreator().getId().equals(currentUser.getId()) &&
-                !currentUser.getRole().equals(User.Role.ADMIN)) {
-            throw new RuntimeException("You don't have permission to assign this task");
-        }
 
         User assignee = userRepository.findById(assigneeId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + assigneeId));
