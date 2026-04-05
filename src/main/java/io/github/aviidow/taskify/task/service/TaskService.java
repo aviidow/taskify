@@ -1,5 +1,7 @@
 package io.github.aviidow.taskify.task.service;
 
+import io.github.aviidow.taskify.exception.ResourceNotFoundException;
+import io.github.aviidow.taskify.notification.EmailService;
 import io.github.aviidow.taskify.task.dto.TaskRequestDto;
 import io.github.aviidow.taskify.task.dto.TaskResponseDto;
 import io.github.aviidow.taskify.task.mapper.TaskMapper;
@@ -23,6 +25,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
+    private final EmailService emailService;
 
     @Transactional
     public TaskResponseDto createTask(TaskRequestDto dto, User creator) {
@@ -31,7 +34,7 @@ public class TaskService {
         User assignee = null;
         if (dto.getAssigneeId() != null) {
             assignee = userRepository.findById(dto.getAssigneeId())
-                    .orElseThrow(() -> new RuntimeException("Assignee not found with id: " + dto.getAssigneeId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("User(assignee)", "id", dto.getAssigneeId()));
         }
 
         Task task = taskMapper.toEntity(dto, creator, assignee);
@@ -51,14 +54,14 @@ public class TaskService {
     @Transactional(readOnly = true)
     public TaskResponseDto getTaskById(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
         return taskMapper.toResponseDto(task);
     }
 
     @Transactional
     public TaskResponseDto updateTask(Long id, TaskRequestDto dto) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
 
         User assignee = dto.getAssigneeId() != null
                 ? userRepository.findById(dto.getAssigneeId()).orElse(null)
@@ -74,7 +77,7 @@ public class TaskService {
     @Transactional
     public void deleteTask(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
         taskRepository.delete(task);
         log.info("Task deleted successfully with id: {}", id);
     }
@@ -82,13 +85,19 @@ public class TaskService {
     @Transactional
     public TaskResponseDto assignTask(Long id, Long assigneeId) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
 
         User assignee = userRepository.findById(assigneeId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + assigneeId));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", assigneeId));
 
         task.setAssignee(assignee);
         Task updatedTask = taskRepository.save(task);
+
+        emailService.sendTaskAssignmentEmail(
+                assignee.getEmail(),
+                task.getTitle(),
+                assignee.getName()
+        );
 
         log.info("Task {} assigned to user {}", id, assignee.getEmail());
         return taskMapper.toResponseDto(updatedTask);

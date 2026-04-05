@@ -1,5 +1,7 @@
 package io.github.aviidow.taskify.user.service;
 
+import io.github.aviidow.taskify.exception.DuplicateResourceException;
+import io.github.aviidow.taskify.exception.ResourceNotFoundException;
 import io.github.aviidow.taskify.user.dto.UserRegistrationDto;
 import io.github.aviidow.taskify.user.dto.UserResponseDto;
 import io.github.aviidow.taskify.user.model.User;
@@ -23,7 +25,7 @@ public class UserService {
         log.info("Registering new user with email: {}", registrationDto.getEmail());
 
         if (userRepository.existsByEmail(registrationDto.getEmail())) {
-            throw new RuntimeException("User with email " + registrationDto.getEmail() + " already exists");
+            throw new DuplicateResourceException("User", "email", registrationDto.getEmail());
         }
 
         User user = new User();
@@ -45,6 +47,6 @@ public class UserService {
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
     }
 }

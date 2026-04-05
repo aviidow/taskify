@@ -5,6 +5,7 @@ import io.github.aviidow.taskify.comment.dto.CommentResponseDto;
 import io.github.aviidow.taskify.comment.mapper.CommentMapper;
 import io.github.aviidow.taskify.comment.model.Comment;
 import io.github.aviidow.taskify.comment.repository.CommentRepository;
+import io.github.aviidow.taskify.exception.ResourceNotFoundException;
 import io.github.aviidow.taskify.task.model.Task;
 import io.github.aviidow.taskify.task.repository.TaskRepository;
 import io.github.aviidow.taskify.user.model.User;
@@ -29,7 +30,7 @@ public class CommentService {
         log.info("Creating comment for task {} by user {}", taskId, author.getEmail());
 
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
         Comment comment = commentMapper.toEntity(dto, author, task);
         Comment savedComment = commentRepository.save(comment);
@@ -43,7 +44,7 @@ public class CommentService {
         log.info("Getting comments for task {}", taskId);
 
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
         return commentRepository.findByTaskIdOrderByCreatedAtDesc(taskId, pageable)
                 .map(comment -> commentMapper.toResponseDto(comment, currentUser.getId(), isAdmin(currentUser)));
@@ -52,7 +53,7 @@ public class CommentService {
     @Transactional(readOnly = true)
     public CommentResponseDto getCommentById(Long id, User currentUser) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", id));
 
         return commentMapper.toResponseDto(comment, currentUser.getId(), isAdmin(currentUser));
     }
@@ -60,7 +61,7 @@ public class CommentService {
     @Transactional
     public CommentResponseDto updateComment(Long id, CommentRequestDto dto, User currentUser) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", id));
 
         commentMapper.updateEntity(comment, dto);
         Comment updatedComment = commentRepository.save(comment);
@@ -72,7 +73,7 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long id, User currentUser) {
         Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Comment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "id", id));
 
         commentRepository.delete(comment);
         log.info("Comment deleted successfully with id: {}", id);

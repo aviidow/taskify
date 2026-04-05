@@ -1,0 +1,43 @@
+package io.github.aviidow.taskify.exception;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+
+@Data
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ErrorResponse {
+
+    private LocalDateTime timestamp;
+    private int status;
+    private String error;
+    private String message;
+    private String path;
+    private String traceId;
+    private Map<String, String> validationErrors;
+
+    public static ErrorResponse of(int status, String error, String message, String path) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status)
+                .error(error)
+                .message(message)
+                .path(path)
+                .build();
+    }
+
+    public static ErrorResponse validationError(String path, Map<String, String> validationErrors) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(400)
+                .error("Validation Failed")
+                .message("Invalid request parameters")
+                .path(path)
+                .validationErrors(validationErrors)
+                .build();
+    }
+}
